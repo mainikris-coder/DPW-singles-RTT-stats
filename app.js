@@ -52,6 +52,12 @@ const tournamentData = {
   ],
 };
 
+const anonymizedNames = Array.from({ length: tournamentData.players.length }, (_, index) => `Player ${String(index + 1).padStart(2, '0')}`);
+tournamentData.players = tournamentData.players.map((player, index) => ({
+  ...player,
+  name: anonymizedNames[index],
+}));
+
 const superfactionColors = {
   Imperium: '#7ec8ff',
   Chaos: '#ff6b6b',
