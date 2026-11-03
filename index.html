@@ -52,8 +52,11 @@
           <canvas id="dispositionChart" role="img" aria-label="Bar chart of players by disposition"></canvas>
         </article>
         <article class="card chart-card full-width">
-          <header class="card-header"><h2>Units vs character points</h2></header>
-          <canvas id="scatterChart" role="img" aria-label="Scatter plot of total units versus character points"></canvas>
+          <header class="card-header">
+            <h2>Units vs character points</h2>
+            <span class="chart-note" id="scatterReference" aria-live="polite"></span>
+          </header>
+          <canvas id="scatterChart" role="img" aria-label="Scatter plot of total units versus character points, split by the filtered roster's median units and character points"></canvas>
         </article>
         <article class="card chart-card full-width">
           <header class="card-header"><h2>Player composition</h2></header>
