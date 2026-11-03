@@ -64,6 +64,100 @@ const superfactionColors = {
   Xenos: '#8be39b',
 };
 
+function getMedian(values) {
+  if (!values.length) return null;
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
+}
+
+function createScatterDatasets(scatterPoints) {
+  return Object.entries(superfactionColors).map(([superfaction, color]) => ({
+    label: superfaction,
+    data: scatterPoints.filter((entry) => entry.superfaction === superfaction),
+    backgroundColor: color,
+    borderColor: color,
+    pointRadius: 6,
+    pointHoverRadius: 8,
+  }));
+}
+
+const medianQuadrantsPlugin = {
+  id: 'medianQuadrants',
+  beforeDatasetsDraw(chart, _args, pluginOptions) {
+    const { x, y } = pluginOptions;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !xScale || !yScale) return;
+
+    const xPixel = xScale.getPixelForValue(x);
+    const yPixel = yScale.getPixelForValue(y);
+    const { left, right, top, bottom } = chart.chartArea;
+    const { ctx } = chart;
+
+    ctx.save();
+    ctx.strokeStyle = pluginOptions.lineColor;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.moveTo(xPixel, top);
+    ctx.lineTo(xPixel, bottom);
+    ctx.moveTo(left, yPixel);
+    ctx.lineTo(right, yPixel);
+    ctx.stroke();
+    ctx.restore();
+  },
+  afterDatasetsDraw(chart, _args, pluginOptions) {
+    const { x, y, labels = [] } = pluginOptions;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !xScale || !yScale) return;
+
+    const xPixel = xScale.getPixelForValue(x);
+    const yPixel = yScale.getPixelForValue(y);
+    const { left, right, top, bottom } = chart.chartArea;
+    const { ctx } = chart;
+    const padding = 8;
+    const lineHeight = 14;
+    const offset = 10;
+    const positions = [
+      { x: left + offset, y: top + offset },
+      { x: xPixel + offset, y: top + offset },
+      { x: left + offset, y: yPixel + offset },
+      { x: xPixel + offset, y: yPixel + offset },
+    ];
+
+    ctx.save();
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.textBaseline = 'top';
+
+    labels.forEach((label, index) => {
+      const position = positions[index];
+      if (!position) return;
+
+      const lines = label.split('\n');
+      const width = Math.max(...lines.map((line) => ctx.measureText(line).width));
+      const height = lines.length * lineHeight;
+      const labelX = Math.min(Math.max(position.x, left + offset), right - width - (padding * 2) - offset);
+      const labelY = Math.min(Math.max(position.y, top + offset), bottom - height - (padding * 2) - offset);
+
+      ctx.fillStyle = pluginOptions.labelBackground;
+      ctx.fillRect(labelX - padding, labelY - padding, width + (padding * 2), height + (padding * 2));
+      ctx.fillStyle = pluginOptions.labelColor;
+      lines.forEach((line, lineIndex) => ctx.fillText(line, labelX, labelY + (lineIndex * lineHeight)));
+    });
+
+    ctx.restore();
+  },
+};
+
+Chart.register(medianQuadrantsPlugin);
+
 const state = {
   search: '',
   superfaction: 'All',
@@ -119,6 +213,9 @@ function applyTheme(theme) {
   }
 
   if (window.scatterChart instanceof Chart) {
+    window.scatterChart.options.plugins.medianQuadrants.lineColor = getThemeColors().muted;
+    window.scatterChart.options.plugins.medianQuadrants.labelColor = getThemeColors().text;
+    window.scatterChart.options.plugins.medianQuadrants.labelBackground = getThemeColors().card;
     window.scatterChart.options.plugins.legend.labels.color = getThemeColors().text;
     window.scatterChart.options.scales.x.ticks.color = getThemeColors().text;
     window.scatterChart.options.scales.x.grid.color = getThemeColors().grid;
@@ -262,11 +359,30 @@ function updateCharts(filteredPlayers) {
   const scatterPoints = filteredPlayers.map((player) => ({
     x: player.totalUnits,
     y: player.charPts,
-    label: player.name,
-    group: player.superfaction,
+    player,
+    superfaction: player.superfaction,
   }));
 
   const colors = getThemeColors();
+  const unitMedian = getMedian(filteredPlayers.map((player) => player.totalUnits));
+  const characterPointMedian = getMedian(filteredPlayers.map((player) => player.charPts));
+  const scatterReferenceTarget = document.getElementById('scatterReference');
+  scatterReferenceTarget.textContent = Number.isFinite(unitMedian) && Number.isFinite(characterPointMedian)
+    ? `Filtered medians: ${unitMedian} units · ${makeCurrency(characterPointMedian)} character pts`
+    : 'No players match the active filters';
+  const quadrantOptions = {
+    x: unitMedian,
+    y: characterPointMedian,
+    lineColor: colors.muted,
+    labelColor: colors.text,
+    labelBackground: colors.card,
+    labels: [
+      'Fewer units\nMore character points',
+      'More units\nMore character points',
+      'Fewer units\nFewer character points',
+      'More units\nFewer character points',
+    ],
+  };
 
   if (window.superfactionChart instanceof Chart) {
     window.superfactionChart.data.labels = superfactionSummary.map((entry) => entry.label);
@@ -339,24 +455,9 @@ function updateCharts(filteredPlayers) {
   }
 
   if (window.scatterChart instanceof Chart) {
-    window.scatterChart.data.datasets = [
-      {
-        label: 'Imperium',
-        data: scatterPoints.filter((entry) => entry.group === 'Imperium').map((entry) => ({ x: entry.x, y: entry.y, label: entry.label })),
-        backgroundColor: superfactionColors.Imperium,
-      },
-      {
-        label: 'Chaos',
-        data: scatterPoints.filter((entry) => entry.group === 'Chaos').map((entry) => ({ x: entry.x, y: entry.y, label: entry.label })),
-        backgroundColor: superfactionColors.Chaos,
-      },
-      {
-        label: 'Xenos',
-        data: scatterPoints.filter((entry) => entry.group === 'Xenos').map((entry) => ({ x: entry.x, y: entry.y, label: entry.label })),
-        backgroundColor: superfactionColors.Xenos,
-      },
-    ];
+    window.scatterChart.data.datasets = createScatterDatasets(scatterPoints);
     window.scatterChart.options.plugins.legend.labels.color = colors.text;
+    window.scatterChart.options.plugins.medianQuadrants = quadrantOptions;
     window.scatterChart.options.scales.x.ticks.color = colors.text;
     window.scatterChart.options.scales.x.grid.color = colors.grid;
     window.scatterChart.options.scales.x.title.color = colors.text;
@@ -368,32 +469,28 @@ function updateCharts(filteredPlayers) {
     window.scatterChart = new Chart(document.getElementById('scatterChart'), {
       type: 'scatter',
       data: {
-        datasets: [
-          {
-            label: 'Imperium',
-            data: scatterPoints.filter((entry) => entry.group === 'Imperium').map((entry) => ({ x: entry.x, y: entry.y, label: entry.label })),
-            backgroundColor: superfactionColors.Imperium,
-          },
-          {
-            label: 'Chaos',
-            data: scatterPoints.filter((entry) => entry.group === 'Chaos').map((entry) => ({ x: entry.x, y: entry.y, label: entry.label })),
-            backgroundColor: superfactionColors.Chaos,
-          },
-          {
-            label: 'Xenos',
-            data: scatterPoints.filter((entry) => entry.group === 'Xenos').map((entry) => ({ x: entry.x, y: entry.y, label: entry.label })),
-            backgroundColor: superfactionColors.Xenos,
-          },
-        ],
+        datasets: createScatterDatasets(scatterPoints),
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: { position: 'bottom', labels: { color: colors.text } },
+          medianQuadrants: quadrantOptions,
           tooltip: {
             callbacks: {
-              label: (context) => `${context.raw.label}: ${context.raw.x} units, ${context.raw.y} char pts`,
+              title: (contexts) => contexts[0].raw.player.name,
+              label: (context) => {
+                const { player } = context.raw;
+                return [
+                  `Faction: ${player.faction}`,
+                  `Superfaction: ${player.superfaction}`,
+                  `Total points: ${player.points}`,
+                  `Units: ${player.totalUnits}`,
+                  `Character points: ${player.charPts}`,
+                  `Vehicle/monster points: ${player.vehicleMonsterPts}`,
+                ];
+              },
             },
           },
         },
