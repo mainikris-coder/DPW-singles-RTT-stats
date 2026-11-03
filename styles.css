@@ -199,6 +199,17 @@ h1 {
   font-size: 1.05rem;
 }
 
+.chart-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.chart-card .card-header {
+  gap: 12px;
+}
+
 canvas {
   width: 100% !important;
   height: 300px !important;
@@ -328,6 +339,15 @@ tbody tr:hover {
 
   .theme-toggle {
     grid-column: 1 / -1;
+  }
+
+  .chart-card .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .chart-note {
+    text-align: left;
   }
 
   .field {
