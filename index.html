@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Interactive analytics dashboard for the 2026 DPW singles RTT roster.">
+    <title>DPW Singles RTT Stats</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body data-theme="dark">
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">2026 tournament roster analytics</p>
+          <h1>DPW Singles RTT Stats</h1>
+        </div>
+        <div class="toolbar" aria-label="Dashboard filters">
+          <label class="field" for="searchInput">
+            <span>Search players</span>
+            <input id="searchInput" type="search" placeholder="Search roster" autocomplete="off">
+          </label>
+          <label class="field" for="superfactionFilter">
+            <span>Superfaction</span>
+            <select id="superfactionFilter"></select>
+          </label>
+          <label class="field" for="factionFilter">
+            <span>Faction</span>
+            <select id="factionFilter"></select>
+          </label>
+          <label class="field" for="dispositionFilter">
+            <span>Disposition</span>
+            <select id="dispositionFilter"></select>
+          </label>
+          <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme">
+            <span class="theme-icon" aria-hidden="true">☀️</span>
+            <span class="theme-label">Light mode</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="summary-grid" id="summaryCards" aria-label="Roster summary"></section>
+
+      <section class="charts-grid" aria-label="Roster analytics">
+        <article class="card chart-card">
+          <header class="card-header"><h2>Players by superfaction</h2></header>
+          <canvas id="superfactionChart" role="img" aria-label="Doughnut chart of players by superfaction"></canvas>
+        </article>
+        <article class="card chart-card">
+          <header class="card-header"><h2>Players by disposition</h2></header>
+          <canvas id="dispositionChart" role="img" aria-label="Bar chart of players by disposition"></canvas>
+        </article>
+        <article class="card chart-card full-width">
+          <header class="card-header"><h2>Units vs character points</h2></header>
+          <canvas id="scatterChart" role="img" aria-label="Scatter plot of total units versus character points"></canvas>
+        </article>
+        <article class="card chart-card full-width">
+          <header class="card-header"><h2>Player composition</h2></header>
+          <div class="composition-bars" id="compositionBars"></div>
+        </article>
+      </section>
+
+      <section class="card table-card" aria-labelledby="rosterHeading">
+        <header class="card-header table-header">
+          <h2 id="rosterHeading">Roster</h2>
+          <span id="resultsCount" aria-live="polite"></span>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Player</th>
+                <th scope="col">Faction</th>
+                <th scope="col">Superfaction</th>
+                <th scope="col">Disposition</th>
+                <th scope="col">Points</th>
+                <th scope="col">Units</th>
+                <th scope="col">Character pts</th>
+                <th scope="col">Vehicle/monster pts</th>
+                <th scope="col">Infantry/mounted pts</th>
+              </tr>
+            </thead>
+            <tbody id="playerTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
