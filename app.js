@@ -105,12 +105,12 @@ function applyTheme(theme) {
   label.textContent = isDark ? 'Light mode' : 'Dark mode';
   icon.textContent = isDark ? '☀️' : '🌙';
 
-  if (window.superfactionChart) {
+  if (window.superfactionChart instanceof Chart) {
     window.superfactionChart.options.plugins.legend.labels.color = getThemeColors().text;
     window.superfactionChart.update();
   }
 
-  if (window.dispositionChart) {
+  if (window.dispositionChart instanceof Chart) {
     window.dispositionChart.options.scales.x.ticks.color = getThemeColors().text;
     window.dispositionChart.options.scales.x.grid.color = getThemeColors().grid;
     window.dispositionChart.options.scales.y.ticks.color = getThemeColors().text;
@@ -118,7 +118,7 @@ function applyTheme(theme) {
     window.dispositionChart.update();
   }
 
-  if (window.scatterChart) {
+  if (window.scatterChart instanceof Chart) {
     window.scatterChart.options.plugins.legend.labels.color = getThemeColors().text;
     window.scatterChart.options.scales.x.ticks.color = getThemeColors().text;
     window.scatterChart.options.scales.x.grid.color = getThemeColors().grid;
@@ -268,7 +268,7 @@ function updateCharts(filteredPlayers) {
 
   const colors = getThemeColors();
 
-  if (window.superfactionChart) {
+  if (window.superfactionChart instanceof Chart) {
     window.superfactionChart.data.labels = superfactionSummary.map((entry) => entry.label);
     window.superfactionChart.data.datasets[0].data = superfactionSummary.map((entry) => entry.count);
     window.superfactionChart.options.plugins.legend.labels.color = colors.text;
@@ -296,7 +296,7 @@ function updateCharts(filteredPlayers) {
     });
   }
 
-  if (window.dispositionChart) {
+  if (window.dispositionChart instanceof Chart) {
     window.dispositionChart.data.labels = dispositionSummary.map((entry) => entry.label);
     window.dispositionChart.data.datasets[0].data = dispositionSummary.map((entry) => entry.count);
     window.dispositionChart.options.scales.x.ticks.color = colors.text;
@@ -338,7 +338,7 @@ function updateCharts(filteredPlayers) {
     });
   }
 
-  if (window.scatterChart) {
+  if (window.scatterChart instanceof Chart) {
     window.scatterChart.data.datasets = [
       {
         label: 'Imperium',
@@ -423,10 +423,6 @@ function refreshDashboard() {
 }
 
 function bindEvents() {
-  document.getElementById('searchInput').addEventListener('input', (event) => {
-    state.search = event.target.value;
-    refreshDashboard();
-  });
 
   document.getElementById('superfactionFilter').addEventListener('change', (event) => {
     state.superfaction = event.target.value;
